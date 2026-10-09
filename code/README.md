@@ -12,6 +12,7 @@ CampusFlow is an AI-powered classroom allocation and campus resource optimizatio
 - Emergency room reassignment proposals that require explicit approval.
 - Reproducible benchmark comparisons, configurable optimization weights, and demo-data reset.
 - SQLite persistence, reproducible seed data, and automated backend tests.
+- One-URL Docker deployment for Render with persistent SQLite storage and generated HTTP Basic authentication.
 
 ## Architecture
 
@@ -39,6 +40,18 @@ uvicorn app.main:app --reload
 ```
 
 The API is at <http://127.0.0.1:8000>, interactive docs at <http://127.0.0.1:8000/docs>, and health check at <http://127.0.0.1:8000/api/health>. The SQLite database is created in `backend/campusflow.db`; demonstration records are seeded on first start.
+
+## Deploy publicly to Render
+
+The repository-root `render.yaml` defines a free Docker web service that builds the frontend and backend together and serves both from one public URL. It uses SQLite on the service's ephemeral filesystem: changes can be lost when Render restarts or redeploys the service. Do not use this free setup for important or sensitive data.
+
+1. Push this repository to GitHub, including `render.yaml` at the repository root and the `code/` deployment files.
+2. In the [Render Dashboard](https://dashboard.render.com/), choose **New → Blueprint**, connect this GitHub repository, and select the branch to deploy.
+3. Review and apply the `campusflow-classroom-app` free service. Wait for its first deploy to become live.
+4. Open the service's **Environment** page and copy the generated `CAMPUSFLOW_PASSWORD` value for your own use. Do not commit or share it. The login username is `admin`.
+5. Open the service's `onrender.com` URL and authenticate when prompted. The health endpoint at `/api/health` remains public for Render's health checks.
+
+The app remains protected by HTTP Basic authentication whenever `CAMPUSFLOW_PASSWORD` is set. Keep the generated password private and rotate it from the Render Environment page if it is exposed. To preserve data across deploys, switch to a paid disk-backed service or migrate the database to a managed database before using it beyond a demo.
 
 ### Frontend
 

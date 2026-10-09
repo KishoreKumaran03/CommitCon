@@ -5,6 +5,7 @@ import threading
 from contextlib import asynccontextmanager
 from datetime import date as Date, datetime, time, timedelta
 from functools import wraps
+from pathlib import Path
 from typing import Callable, ParamSpec, TypeVar
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
@@ -12,7 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
+from starlette.staticfiles import StaticFiles
 
+from .auth import BasicAuthMiddleware
 from .database import Base, SessionLocal, engine, get_db
 from .models import (
     Allocation, Classroom, CourseClass, OptimizationSettings, RoomUnavailability, Schedule,
@@ -118,6 +121,7 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
+app.add_middleware(BasicAuthMiddleware)
 _allocation_lock = threading.Lock()
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -718,3 +722,8 @@ def dashboard(db: Session = Depends(get_db)):
         } for row in sorted(allocations, key=lambda item: item.created_at, reverse=True)[:5]],
         "upcoming_classes": next_sessions, "conflicts": conflicts[:5],
     }
+
+
+frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if frontend_dist.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")

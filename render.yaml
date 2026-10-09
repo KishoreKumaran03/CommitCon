@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: campusflow-classroom-app
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: code
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./campusflow.db
+      - key: CAMPUSFLOW_USERNAME
+        value: admin
+      - key: CAMPUSFLOW_PASSWORD
+        generateValue: true
